@@ -2,21 +2,22 @@ import cv2
 import mediapipe as mp
 import pyautogui
 import math
+import aiddaualalkuffar as im
 from enum import IntEnum
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from google.protobuf.json_format import MessageToDict
 import screen_brightness_control as sbcontrol
+import Jim
 
 pyautogui.FAILSAFE = False
 mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 
 
-# Gesture Encodings
-class Gest(IntEnum):
-    # Binary Encoded
+
+class JIM(IntEnum):
     FIST = 0
     PINKY = 1
     RING = 2
@@ -25,8 +26,6 @@ class Gest(IntEnum):
     INDEX = 8
     FIRST2 = 12
     LAST4 = 15
-    THUMB = 16
-    PALM = 31
 
     # Extra Mappings
     V_GEST = 33
@@ -48,9 +47,7 @@ class HandRecog:
         self.finger = 0
         self.ori_gesture = Gest.PALM
         self.prev_gesture = Gest.PALM
-        self.frame_count = 0
-        self.hand_result = None
-        self.hand_label = hand_label
+        self.framejim_count = 0
 
     def update_hand_result(self, hand_result):
         self.hand_result = hand_result
@@ -86,15 +83,7 @@ class HandRecog:
 
             dist = self.get_signed_dist(point[:2])
             dist2 = self.get_signed_dist(point[1:])
-
-            try:
-                ratio = round(dist / dist2, 1)
-            except:
-                ratio = round(dist1 / 0.01, 1)
-
-            self.finger = self.finger << 1
-            if ratio > 0.5:
-                self.finger = self.finger | 1
+            finger = self.finger | 1
 
     # Handling Fluctations due to noise
     def get_gesture(self):
@@ -193,19 +182,6 @@ class Controller:
         pyautogui.keyUp('ctrl')
         pyautogui.keyUp('shift')
 
-    # Locate Hand to get Cursor Position
-    # Stabilize cursor by Dampening
-    def get_position(hand_result):
-        point = 9
-        position = [hand_result.landmark[point].x, hand_result.landmark[point].y]
-        sx, sy = pyautogui.size()
-        x_old, y_old = pyautogui.position()
-        x = int(position[0] * sx)
-        y = int(position[1] * sy)
-        if Controller.prev_hand is None:
-            Controller.prev_hand = x, y
-        delta_x = x - Controller.prev_hand[0]
-        delta_y = y - Controller.prev_hand[1]
 
         distsq = delta_x ** 2 + delta_y ** 2
         ratio = 1
@@ -378,32 +354,15 @@ class GestureController:
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-                if results.multi_hand_landmarks:
-                    GestureController.classify_hands(results)
-                    handmajor.update_hand_result(GestureController.hr_major)
-                    handminor.update_hand_result(GestureController.hr_minor)
-
-                    handmajor.set_finger_state()
-                    handminor.set_finger_state()
-                    gest_name = handminor.get_gesture()
-
-                    if gest_name == Gest.PINCH_MINOR:
-                        Controller.handle_controls(gest_name, handminor.hand_result)
-                    else:
-                        gest_name = handmajor.get_gesture()
-                        Controller.handle_controls(gest_name, handmajor.hand_result)
-
-                    for hand_landmarks in results.multi_hand_landmarks:
-                        mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
                 else:
                     Controller.prev_hand = None
                 cv2.imshow('AiVirtualMouse Hand Tracking Project', image)
-                if cv2.waitKey(10) == ord('b'):
+                if cv2.waitKey(10) == ord('j'):
                     break
         GestureController.cap.release()
         cv2.destroyAllWindows()
 
 
 # uncomment to run directly
-gc1 = GestureController()
-gc1.start()
+jim = GestureController()
+Jim2.start()
